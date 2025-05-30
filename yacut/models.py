@@ -1,7 +1,12 @@
+import re
+import string
 from datetime import datetime
+from random import choice
 
-from flask import request
+from flask import url_for
 
+from .constants import (CUSTOM_ID_REG_EXP_PATTERN, GENERATOR_LENGTH_VALUE,
+                        MAX_CUSTOM_ID_LENGTH)
 from yacut import db
 
 
@@ -20,7 +25,7 @@ class URLMap(db.Model):
         return dict(
             url=self.original,
             short_link=(
-                request.scheme + '://' + request.host + '/' + self.short
+                url_for('index_view', _external=True) + self.short
             )
         )
 
@@ -34,3 +39,50 @@ class URLMap(db.Model):
         for field in ['original', 'short']:
             if field in data:
                 setattr(self, field, data[field])
+
+    def validate_short(self):
+        if (
+            not re.match(CUSTOM_ID_REG_EXP_PATTERN, self.short)
+            or len(self.short) > MAX_CUSTOM_ID_LENGTH
+        ):
+            raise Exception('Указано недопустимое имя для короткой ссылки')
+
+        elif (
+            self.short == 'files'
+            or self.get_by_short_id(self.short) is not None
+        ):
+            raise Exception(
+                'Предложенный вариант короткой ссылки уже существует.'
+            )
+
+    @classmethod
+    def get_by_short_id(cls, short_id):
+        return cls.query.filter_by(short=short_id).first()
+
+    @staticmethod
+    def get_unique_short_id():
+        flag = True
+        while flag:
+            short = ''.join(
+                [choice(string.ascii_letters + string.digits)
+                 for _ in range(GENERATOR_LENGTH_VALUE)]
+            )
+            if (
+                short == 'files'
+                or URLMap.get_by_short_id(short) is not None
+            ):
+                continue
+            return short
+
+    @staticmethod
+    def add(original_link, short_id=None):
+        if not short_id:
+            short_id = URLMap.get_unique_short_id()
+        url_map = URLMap(
+            original=original_link,
+            short=short_id
+        )
+        url_map.validate_short()
+        db.session.add(url_map)
+        db.session.commit()
+        return url_map
