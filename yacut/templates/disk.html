@@ -34,28 +34,26 @@
           </div>
         </div>
       </div>
-
       <div class="container">
         <div class="row ">
           <div class="col-sm">
           </div>
-          <div class="col-sm">
-          {% for file in files: %}
-                <p class="text-center">
-                <h5 class="text-center">{{ file }}</h5>
-                </p>
-          {% endfor %}
-          {% for url in urls: %}
-                <p class="text-center">
-                <h5 class="text-center">{{ url }}</h5>
-                </p>
-          {% endfor %}
+            <center>
+              <table width="500">
+                <tbody>
+                    {% for file in file_link %}
+                        <tr>
+                            <td>{{file['name']}}</h5></td>
+                            <td><a href="{{file['link']}}">{{file['link']}}</a></td>
+                    {% endfor %}
+                </tbody>
+              </table>
+            </center>
           </div>
           <div class="col-sm">
           </div>
         </div>
       </div>
-      
     </section>
   </main>
 {% endblock %}

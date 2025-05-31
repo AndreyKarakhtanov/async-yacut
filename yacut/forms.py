@@ -13,7 +13,7 @@ class URLMapForm(FlaskForm):
         'Длинная ссылка',
         validators=[
             DataRequired(message='\"url\" является обязательным полем!'),
-            URL(message='Указано недопустимый адрес ссылки'),
+            URL(message='Указан недопустимый адрес ссылки'),
             Length(MIN_ORIGINAL_LINK_LENGTH, MAX_ORIGINAL_LINK_LENGTH)
         ]
     )
@@ -37,6 +37,8 @@ class URLMapForm(FlaskForm):
 
 class FilesForm(FlaskForm):
     files = MultipleFileField(
-        validators=[FileRequired()]
+        validators=[
+            FileRequired(message='Необходимо прикрепить хотя бы один файл')
+        ]
     )
     submit = SubmitField('Загрузить')

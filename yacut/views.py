@@ -1,6 +1,8 @@
 from flask import flash, redirect, render_template, url_for
+
 from . import app
 from .disk import get_download_file_url, upload_files_and_get_url
+from .exceptions import ValidationError
 from .forms import FilesForm, URLMapForm
 from .models import URLMap
 
@@ -14,7 +16,7 @@ def index_view():
     short_id = form.custom_id.data
     try:
         url_map = URLMap.add(original_link, short_id)
-    except Exception as e:
+    except ValidationError as e:
         flash(str(e))
         return render_template('index.html', form=form)
     short = url_for('index_view', _external=True) + url_map.short
@@ -27,16 +29,20 @@ async def files_view():
     if form.validate_on_submit():
         files = form.files.data
         paths = await upload_files_and_get_url(files)
-        files_names = [file.filename for file in files]
-        urls = []
+        file_link = []
         for path in paths:
             original_link = await get_download_file_url(path)
-            url_map = URLMap.add(original_link)
-            urls.append(
-                url_for('index_view', _external=True) + url_map.short
+            try:
+                url_map = URLMap.add(original_link)
+            except ValidationError as e:
+                flash(str(e))
+                return render_template('disk.html', form=form)
+            file_link.append(
+                {'name': path.split('/')[-1],
+                 'link': url_for('index_view', _external=True) + url_map.short}
             )
         return render_template('disk.html', form=form,
-                               files=files_names, urls=urls)
+                               file_link=file_link)
     return render_template('disk.html', form=form)
 
 

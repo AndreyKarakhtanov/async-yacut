@@ -1,7 +1,10 @@
 from flask import jsonify, request
 
+from werkzeug.exceptions import BadRequest
+
 from . import app
 from .error_handlers import InvalidAPIUsage
+from .exceptions import ValidationError
 from .models import URLMap
 
 
@@ -9,13 +12,13 @@ from .models import URLMap
 def create_id():
     try:
         data = request.get_json()
-    except Exception:
+    except BadRequest:
         raise InvalidAPIUsage('Отсутствует тело запроса')
     if 'url' not in data:
         raise InvalidAPIUsage('\"url\" является обязательным полем!')
     try:
         url_map = URLMap.add(data['url'], data.get('custom_id', None))
-    except Exception as e:
+    except ValidationError as e:
         raise InvalidAPIUsage(str(e))
     return jsonify(url_map.create_id()), 201
 
